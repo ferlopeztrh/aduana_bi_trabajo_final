@@ -1,0 +1,8 @@
+# Dependencias del proyecto (solo las indicadas en la consigna).
+# Instalar dentro de un entorno virtual:  pip install -r requirements.txt
+# os y pathlib son de la biblioteca estandar: no se instalan.
+
+pandas              # manipulacion y transformacion de datos
+SQLAlchemy          # gestion de conexion, engine y consultas
+psycopg[binary]     # driver de PostgreSQL (v3)
+openpyxl            # lectura/escritura de Excel

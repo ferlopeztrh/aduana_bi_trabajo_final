@@ -1,0 +1,15 @@
+# Normaliza finales de línea: LF en el repo, automático en el working copy.
+* text=auto
+
+# Scripts que deben conservar LF
+*.sh   text eol=lf
+*.py   text eol=lf
+*.sql  text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf
+
+# Archivos binarios (no tocar)
+*.pdf   binary
+*.pbix  binary
+*.parquet binary
+*.xlsx  binary

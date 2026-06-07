@@ -1,0 +1,31 @@
+# ─── Secretos / entorno ───
+.env
+*.local
+
+# ─── Configuración local de Claude Code (personal de cada máquina) ───
+.claude/settings.local.json
+
+# ─── Python ───
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+*.egg-info/
+
+# ─── Datos del Data Lake (pesados — no van a git) ───
+data-lake/bronze/*
+data-lake/silver/*
+data-lake/gold/*
+*.parquet
+
+# ─── Entregables binarios pesados ───
+*.pbix
+
+# ─── Consigna (material de la cátedra, no es código del proyecto) ───
+trabajo_final.pdf
+
+# ─── Sistema ───
+.DS_Store
+Thumbs.db

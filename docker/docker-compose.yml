@@ -1,0 +1,44 @@
+# Docker Compose — Motor PostgreSQL dedicado del proyecto Aduana BI
+#
+# Levanta un contenedor PostgreSQL aislado y reproducible para el Data Warehouse.
+# Las credenciales y el puerto se leen del archivo .env (en la raíz del proyecto).
+#
+# Uso (desde la raíz del proyecto):
+#   docker compose --env-file .env -f docker/docker-compose.yml up -d     # iniciar
+#   docker compose --env-file .env -f docker/docker-compose.yml ps        # estado
+#   docker compose --env-file .env -f docker/docker-compose.yml down      # detener (conserva datos)
+#   docker compose --env-file .env -f docker/docker-compose.yml down -v   # detener y BORRAR datos
+
+# Nombre del proyecto/stack de Compose. Sin esto, Compose usaría el nombre de la
+# carpeta ("docker") como nombre del stack. Lo fijamos a "aduana_db".
+name: aduana_db
+
+services:
+  aduana_db:
+    image: postgres:16-alpine
+    container_name: aduana_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Locale/encoding correctos para datos en español
+      LANG: es_ES.utf8
+    ports:
+      # host:contenedor — puerto 5444 en el host para NO chocar con tu postgres_dev (5443)
+      - "${POSTGRES_PORT:-5444}:5432"
+    volumes:
+      # Volumen nombrado: los datos sobreviven a 'down' (se borran solo con 'down -v')
+      - aduana_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Permite saber cuándo Postgres está realmente listo para aceptar conexiones
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  # Volumen gestionado por Compose; quedará como "aduana_db_pgdata".
+  aduana_pgdata:
+    driver: local
