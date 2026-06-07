@@ -1,4 +1,4 @@
-# Aduana BI — Data Warehouse, ETL y OLAP (DNIT 2025)
+# Aduana BI - Data Warehouse, ETL y OLAP (DNIT 2025)
 
 Solución de **Inteligencia de Negocios end-to-end** sobre datos reales de la Aduana
 paraguaya (DNIT), año 2025. Trabajo Final de la materia _Inteligencia de Negocios_
@@ -8,21 +8,21 @@ paraguaya (DNIT), año 2025. Trabajo Final de la materia _Inteligencia de Negoci
 
 ```
 bronze (CSV crudo) → silver (CSV limpio) → staging → modelo estrella (PostgreSQL) → OLAP → Power BI
-        └────────────── ETL en Python (extract → transform → load con COPY) ──────────────┘
 ```
+
+El ETL en Python conecta el Data Lake con el Data Warehouse (extract → transform → load con COPY).
 
 ## Estructura del proyecto
 
 | Carpeta / archivo   | Contenido                                                                                             |
 | ------------------- | ----------------------------------------------------------------------------------------------------- |
-| `data-lake/bronze/` | CSV originales sin modificar (24 archivos = 12 meses × 2 niveles) **(no van al repo)**                |
+| `data-lake/bronze/` | CSV originales sin modificar (24 archivos = 12 meses × 2 niveles)                                     |
 | `data-lake/silver/` | datos limpios y normalizados (CSV, los genera el ETL)                                                 |
-| `data-lake/gold/`   | dimensiones + agregados listos para análisis (CSV, los genera `export_gold`)                          |
+| `data-lake/gold/`   | dimensiones y agregados listos para análisis (CSV, los genera `export_gold`)                          |
 | `etl/`              | scripts Python: `etl_aduana` (orquestador ETL), `run_sql` (ejecuta `.sql`), `export_gold` (capa gold) |
-| `sql/`              | `01_schema` · `02_constraints` · `03_views_olap` · `04_aggregates`                                    |
-| `analysis/`         | `consultas_olap.sql` — los análisis obligatorios (24 consultas)                                       |
+| `sql/`              | `01_schema`, `02_constraints`, `03_views_olap`, `04_aggregates`                                       |
+| `analysis/`         | `consultas_olap.sql` (los análisis del proyecto)                                                      |
 | `docker/`           | `docker-compose.yml` del motor PostgreSQL                                                             |
-| `docs/`             | documentación: técnica, diccionario de datos, **manual Power BI** y **guía de defensa**               |
 
 ---
 
@@ -33,19 +33,19 @@ Pensada para alguien que clona el repo por primera vez. Los comandos se muestran
 
 ## Requisitos previos
 
-- **Docker Desktop** (con Docker Compose) — corriendo.
+- **Docker Desktop** con Docker Compose, en ejecución.
 - **Python 3.11+** (probado en 3.14).
 - **Git**.
 - Los **24 archivos CSV** de la DNIT (no se versionan por su tamaño, ~8.8 GB).
 
-## Paso 0 — Clonar el repositorio
+## Paso 0 - Clonar el repositorio
 
 ```powershell
-git clone https://github.com/ferlopeztrh/aduana_bi.git
-cd aduana_bi
+git clone https://github.com/ferlopeztrh/aduana_bi_trabajo_final.git
+cd aduana_bi_trabajo_final
 ```
 
-## Paso 1 — Colocar los datos en bronze
+## Paso 1 - Colocar los datos en bronze
 
 Copiá los 24 CSV en `data-lake/bronze/`. Nombres esperados (por cada mes en mayúsculas):
 
@@ -55,14 +55,14 @@ data-lake/bronze/2025_ENERO.csv                 # nivel SUBÍTEM
 ... (FEBRERO, MARZO, ..., DICIEMBRE)
 ```
 
-## Paso 2 — Configurar variables de entorno
+## Paso 2 - Configurar variables de entorno
 
 ```powershell
 Copy-Item .env.example .env
-# Editá .env si querés cambiar usuario/clave/puerto de PostgreSQL.
+# Editá .env con tu usuario, clave, puerto y nombre de la base.
 ```
 
-## Paso 3 — Levantar PostgreSQL (contenedor `aduana_db`)
+## Paso 3 - Levantar PostgreSQL (contenedor `aduana_db`)
 
 ```powershell
 docker compose --env-file .env -f docker/docker-compose.yml up -d
@@ -71,7 +71,7 @@ docker compose --env-file .env -f docker/docker-compose.yml ps   # debe figurar 
 
 La base queda en `localhost:5444` (puerto configurable en `.env`).
 
-## Paso 4 — Entorno virtual e instalación de dependencias
+## Paso 4 - Entorno virtual e instalación de dependencias
 
 Buena práctica: aislar las dependencias del proyecto en un entorno virtual (`venv`).
 Se crea una sola vez y se **activa** cada vez que abrís una terminal para trabajar; a partir
@@ -100,7 +100,7 @@ pip install -r requirements.txt
 
 Con el entorno activado, **todos los comandos siguientes** se corren con `python ...`.
 
-## Paso 5 — Crear el esquema estrella
+## Paso 5 - Crear el esquema estrella
 
 Los scripts SQL se ejecutan con un comando Python (multiplataforma, no depende del shell):
 
@@ -110,20 +110,20 @@ python -m etl.run_sql sql/01_schema.sql sql/02_constraints.sql
 
 > El `01_schema.sql` es **idempotente** (recrea el esquema desde cero); se puede correr las veces que haga falta.
 
-## Paso 6 — Ejecutar el ETL (bronze → silver → staging → estrella)
+## Paso 6 - Ejecutar el ETL (bronze → silver → staging → estrella)
 
 ```powershell
-# Carga completa de todo el año (con la capa silver) — tarda ~30-50 min:
+# Carga completa de todo el año (con la capa silver), tarda ~30-50 min:
 python -m etl.etl_aduana --hilos 6
 
 # Prueba rápida (sin cargar los 8.8 GB): 5000 filas de un mes, sin silver
 python -m etl.etl_aduana --meses ENERO --muestra 5000 --sin-silver
 ```
 
-Opciones: `--meses ENERO FEBRERO` (meses puntuales) · `--muestra N` (límite por archivo) ·
-`--sin-silver` (no escribe silver) · `--hilos N` (paralelismo, default = nº de núcleos hasta 4).
+Opciones: `--meses ENERO FEBRERO` (meses puntuales), `--muestra N` (límite por archivo),
+`--sin-silver` (no escribe silver), `--hilos N` (paralelismo, default = nº de núcleos hasta 4).
 
-## Paso 7 — Crear las vistas y agregados OLAP
+## Paso 7 - Crear las vistas y agregados OLAP
 
 ```powershell
 python -m etl.run_sql sql/03_views_olap.sql sql/04_aggregates.sql
@@ -132,29 +132,26 @@ python -m etl.run_sql sql/03_views_olap.sql sql/04_aggregates.sql
 > `04_aggregates.sql` crea **vistas materializadas**: se llenan con los datos al crearse,
 > por eso este paso va **después** del ETL.
 
-## Paso 8 — Exportar la capa gold (dimensiones + agregados a CSV)
+## Paso 8 - Exportar la capa gold (dimensiones y agregados a CSV)
 
 ```powershell
 python -m etl.export_gold     # escribe data-lake/gold/*.csv
 ```
 
-## Paso 9 — Verificar / correr los análisis
+## Paso 9 - Verificar / correr los análisis
 
 ```powershell
 python -m etl.run_sql analysis/consultas_olap.sql   # imprime los resultados en consola
 ```
 
-## Paso 10 — Conectar Power BI
+## Paso 10 - Conectar Power BI
 
 1. Power BI Desktop → **Obtener datos → Base de datos PostgreSQL**
    (la primera vez ofrece instalar el proveedor **Npgsql**; aceptar).
 2. Servidor: `localhost:5444` · Base de datos: `aduana_bi`.
-3. Usuario/clave: los de tu `.env` (por defecto `aduana` / `aduana_bi_2025`).
+3. Usuario y clave: los que definiste en `.env`.
 4. Importar las tablas `dw.dim_*` y `dw.fact_aduana_item` (modelo estrella nativo;
    Power BI detecta las relaciones por las claves), o las `dw.agg_*` para visuales rápidos.
-
-> **Cómo se construyó el dashboard completo** (modelo, relaciones, medidas DAX, visuales de
-> las 2 páginas y puntos de defensa): ver [`docs/powerbi_implementacion.md`](docs/powerbi_implementacion.md).
 
 ---
 
@@ -184,14 +181,3 @@ docker exec -it aduana_db psql -U aduana -d aduana_bi
 | `port is already allocated` al levantar Docker | El puerto 5444 está ocupado: cambiar `POSTGRES_PORT` en `.env`.                     |
 | Power BI no encuentra el conector              | Instalar el proveedor **Npgsql** (Power BI lo ofrece al conectar).                  |
 | `psql: could not connect`                      | El contenedor no está "healthy": revisar con `docker compose ... ps`.               |
-
----
-
-## Estado del proyecto
-
-- [x] **Fase B** — Andamiaje + Docker (PostgreSQL `aduana_db`)
-- [x] **Fase C** — Modelo estrella (12 dims + 2 hechos + 2 staging; PK/FK/índices)
-- [x] **Fase D** — ETL en Python (2.46M ítems + 5.05M subítems, validado)
-- [x] **Fase E** — OLAP (6 vistas + 4 vistas materializadas + 24 consultas)
-- [x] **Fase F** — Dashboard Power BI (2 páginas: general + análisis 27/28/29; 15 medidas DAX)
-- [ ] **Fase G** — Documento final
